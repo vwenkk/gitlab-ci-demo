@@ -1,0 +1,25 @@
+stages:
+  - build
+
+image: docker:20.10.16
+
+variables:
+  HARBOR_USER: "admin"
+  HARBOR_TOKEN: "xxxx"
+
+services:
+  - name: docker:20.10.16-dind
+
+before_script:
+  - docker login -u $HARBOR_USER -p $HARBOR_TOKEN target
+
+build_and_push:
+  stage: build
+  script:
+    - docker info
+    - docker build --network=host -t target/library/loadlab-backend:$CI_COMMIT_SHORT_SHA ./backend
+    - docker push target/library/loadlab-backend:$CI_COMMIT_SHORT_SHA
+    - docker build --network=host -t target/library/loadlab-frontend:$CI_COMMIT_SHORT_SHA ./frontend
+    - docker push target/library/loadlab-frontend:$CI_COMMIT_SHORT_SHA
+    - chmod +x ./sync_deploy-file.sh
+    - ./sync_deploy-file.sh
